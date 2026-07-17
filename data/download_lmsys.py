@@ -28,9 +28,17 @@ def main():
     except ImportError:
         pass
 
+    # datasets' streaming reader prefetches the next parquet shard ahead of
+    # where we actually stop reading; breaking out of the loop below then
+    # abandons that in-flight request, and huggingface_hub logs a harmless
+    # retry warning for it. Quiet that logger since it's not a real failure.
+    from huggingface_hub.utils import logging as hf_logging
+    hf_logging.set_verbosity_error()
+
     from datasets import load_dataset
     ds = load_dataset(args.dataset, split="train", streaming=True,
                       token=os.environ.get("HF_TOKEN"))
+    ds = ds.take(args.n * 2)  # generous cap: some rows get skipped below
 
     records, t = [], 0.0
     for row in ds:
