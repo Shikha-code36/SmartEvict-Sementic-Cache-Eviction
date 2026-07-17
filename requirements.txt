@@ -1,0 +1,2 @@
+numpy>=1.24
+faiss-cpu>=1.8  # optional: NumPy fallback store used if absent

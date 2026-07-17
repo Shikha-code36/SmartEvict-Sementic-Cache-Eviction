@@ -1,0 +1,176 @@
+{
+  "high_dup (tail=0.15)": {
+    "config": {
+      "n_requests": 6000,
+      "cache_size": 400,
+      "threshold": 0.8,
+      "k_tail": 8
+    },
+    "train_hist": [
+      [
+        6.210148016611735,
+        5.988663673400879
+      ],
+      [
+        5.880449295043945,
+        5.84952449798584
+      ],
+      [
+        5.672905921936035,
+        5.799351215362549
+      ],
+      [
+        5.6097731590271,
+        5.7639384269714355
+      ]
+    ],
+    "results": {
+      "fifo": {
+        "hit_ratio": 0.6245833333333334,
+        "tokens_saved": 339676,
+        "tokens_saved_frac": 0.5882833796904063,
+        "evictions": 501,
+        "wall_s": 0.12
+      },
+      "lru": {
+        "hit_ratio": 0.6625,
+        "tokens_saved": 350193,
+        "tokens_saved_frac": 0.606497726021039,
+        "evictions": 410,
+        "wall_s": 0.11
+      },
+      "learned": {
+        "hit_ratio": 0.6633333333333333,
+        "tokens_saved": 350743,
+        "tokens_saved_frac": 0.607450268617012,
+        "evictions": 408,
+        "wall_s": 0.17,
+        "fallbacks": 0,
+        "decisions": 408
+      },
+      "oracle": {
+        "hit_ratio": 0.6695833333333333,
+        "tokens_saved": 357703,
+        "tokens_saved_frac": 0.6195042621951431,
+        "evictions": 393,
+        "wall_s": 0.11
+      }
+    }
+  },
+  "med_dup  (tail=0.35)": {
+    "config": {
+      "n_requests": 6000,
+      "cache_size": 400,
+      "threshold": 0.8,
+      "k_tail": 8
+    },
+    "train_hist": [
+      [
+        5.461585521697998,
+        4.845375061035156
+      ],
+      [
+        5.154868125915527,
+        4.695246696472168
+      ],
+      [
+        4.963303279876709,
+        4.727975368499756
+      ],
+      [
+        4.934614944458008,
+        4.645244121551514
+      ]
+    ],
+    "results": {
+      "fifo": {
+        "hit_ratio": 0.4579166666666667,
+        "tokens_saved": 243648,
+        "tokens_saved_frac": 0.4025017593592959,
+        "evictions": 901,
+        "wall_s": 0.19
+      },
+      "lru": {
+        "hit_ratio": 0.50375,
+        "tokens_saved": 260039,
+        "tokens_saved_frac": 0.42957937270994195,
+        "evictions": 791,
+        "wall_s": 0.16
+      },
+      "learned": {
+        "hit_ratio": 0.5104166666666666,
+        "tokens_saved": 254793,
+        "tokens_saved_frac": 0.42091308269484284,
+        "evictions": 775,
+        "wall_s": 0.25,
+        "fallbacks": 0,
+        "decisions": 775
+      },
+      "oracle": {
+        "hit_ratio": 0.52125,
+        "tokens_saved": 269627,
+        "tokens_saved_frac": 0.44541856231435867,
+        "evictions": 749,
+        "wall_s": 0.16
+      }
+    }
+  },
+  "low_dup  (tail=0.60)": {
+    "config": {
+      "n_requests": 6000,
+      "cache_size": 400,
+      "threshold": 0.8,
+      "k_tail": 8
+    },
+    "train_hist": [
+      [
+        5.102395943232945,
+        4.0915045738220215
+      ],
+      [
+        4.644849572862897,
+        4.011963844299316
+      ],
+      [
+        4.510200704847064,
+        4.132988452911377
+      ],
+      [
+        4.498409271240234,
+        4.032728672027588
+      ]
+    ],
+    "results": {
+      "fifo": {
+        "hit_ratio": 0.31916666666666665,
+        "tokens_saved": 186513,
+        "tokens_saved_frac": 0.27830076769847134,
+        "evictions": 1234,
+        "wall_s": 0.22
+      },
+      "lru": {
+        "hit_ratio": 0.35291666666666666,
+        "tokens_saved": 192157,
+        "tokens_saved_frac": 0.28672232294068056,
+        "evictions": 1153,
+        "wall_s": 0.21
+      },
+      "learned": {
+        "hit_ratio": 0.3545833333333333,
+        "tokens_saved": 192452,
+        "tokens_saved_frac": 0.28716249990674214,
+        "evictions": 1149,
+        "wall_s": 0.35,
+        "fallbacks": 0,
+        "decisions": 1149
+      },
+      "oracle": {
+        "hit_ratio": 0.3645833333333333,
+        "tokens_saved": 217499,
+        "tokens_saved_frac": 0.3245357625133359,
+        "evictions": 1125,
+        "wall_s": 0.23
+      }
+    }
+  }
+}
