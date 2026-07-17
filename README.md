@@ -15,8 +15,12 @@ answer is actually valid for a new prompt) — that is a separate problem.
 On a 20K-request synthetic conversational workload (held-out split, cache
 size 400): the learned policy saves **+3.6% to +6.5% more regeneration
 tokens than LRU** depending on duplicate density, capturing ~40–65% of the
-clairvoyant-oracle headroom, with **zero fallbacks fired**. Full tables and
-all caveats (synthetic data, hashing embeddings): [results/RESULTS.md](results/RESULTS.md).
+clairvoyant-oracle headroom, with **zero fallbacks fired**.
+
+On a real 50K-request trace from LMSYS-Chat-1M (held-out 20K-request tail):
+the learned policy saves **+18.6% more regeneration tokens than LRU**,
+closing nearly all of the gap to the clairvoyant oracle (+22.4%). Full
+tables and all caveats: [results/RESULTS.md](results/RESULTS.md).
 
 ## Quickstart — use the wrapper
 
@@ -64,13 +68,31 @@ Outputs `results/benchmark.json` + `results/learned_policy.npz`.
 
 ### Run on real data (LMSYS-Chat-1M)
 
-Requires Hugging Face access (accept the dataset license on the hub first):
+`lmsys/lmsys-chat-1m` is a **gated dataset** — `pip install datasets` alone
+is not enough, you need an approved Hugging Face access request and a token:
 
-```bash
-pip install datasets
-python data/download_lmsys.py --n 50000 --out data/lmsys_trace.json
-python benchmark/run_benchmark.py --trace data/lmsys_trace.json
-```
+1. Create a free account at https://huggingface.co if you don't have one.
+2. Visit https://huggingface.co/datasets/lmsys/lmsys-chat-1m while logged
+   in and submit the access request (fills in affiliation/use-case). This
+   is reviewed manually by the dataset owner and is **not instant** — it
+   can take anywhere from minutes to a day or more to be approved. Recheck
+   the page until it shows you have access.
+3. Generate a read-scoped token at https://huggingface.co/settings/tokens.
+4. Put the token in a `.env` file in the repo root (gitignored, never commit
+   it):
+   ```
+   HF_TOKEN=hf_your_token_here
+   ```
+5. Install deps and download:
+   ```bash
+   pip install datasets python-dotenv
+   python data/download_lmsys.py --n 50000 --out data/lmsys_trace.json
+   python benchmark/run_benchmark.py --trace data/lmsys_trace.json
+   ```
+
+If step 5 fails with `DatasetNotFoundError: ... is a gated dataset`, the
+token is either missing/invalid or your access request from step 2 hasn't
+been approved yet — it is not a code/setup bug.
 
 ## How it works (Cold-RL → semantic cache mapping)
 
@@ -108,9 +130,13 @@ results/     benchmark output + honest write-up (RESULTS.md)
 
 ## Known limitations
 
-- Benchmarked on synthetic data with hashing embeddings so far (build
-  environment had no Hugging Face access). Rerun on LMSYS + MiniLM before
-  quoting numbers anywhere public.
+- Benchmarked on synthetic data and a real 50K-request LMSYS-Chat-1M trace,
+  both still using the `HashingEmbedder` rather than real sentence
+  embeddings. Rerun with a `sentence_transformers_embedder()` (or similar)
+  before quoting numbers anywhere public — hashing embeddings are a cheap
+  proxy for semantic similarity, not the real thing.
+- LMSYS results are from a single trace/seed/split; re-run across a few
+  seeds before treating +18.6% as a stable effect size.
 - The model generalizes across duplicate-density regimes here, but was not
   tested across *time-scale* shifts (e.g., traces with very different
   arrival rates); features use log-scaled absolute times, so a per-deployment
