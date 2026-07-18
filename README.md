@@ -1,26 +1,138 @@
 # SmartEvict
 
+![Python](https://img.shields.io/badge/Python-3.10+-blue)
+![NumPy](https://img.shields.io/badge/NumPy-Scientific%20Computing-green)
+![FAISS](https://img.shields.io/badge/FAISS-Vector%20Search-orange)
+![GPTCache](https://img.shields.io/badge/GPTCache-Compatible-purple)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
 > A learned, cost-aware eviction policy for semantic LLM caches.
 
----
+------------------------------------------------------------------------
 
 ## Why SmartEvict?
 
-Traditional semantic caches use heuristic eviction policies such as LRU and FIFO. These policies only consider *when* an entry was last accessed, not *how expensive* it would be to regenerate.
+Traditional semantic caches use heuristic eviction policies such as LRU
+and FIFO. These policies only consider *when* an entry was last
+accessed, not *how expensive* it would be to regenerate.
 
-SmartEvict predicts which cache entries are worth keeping by considering:
+SmartEvict predicts which cache entries are worth keeping by
+considering:
 
-- Regeneration cost
-- Access history
-- Semantic reuse patterns
-- Response size
+-   Regeneration cost
+-   Access history
+-   Semantic reuse patterns
+-   Response size
 
 ### Benefits
 
-- Higher regeneration-token savings
-- Lower latency
-- Reduced LLM cost
-- Safe fallback to classical LRU
+-   Higher regeneration-token savings
+-   Lower latency
+-   Reduced LLM cost
+-   Safe fallback to classical LRU
+
+------------------------------------------------------------------------
+
+## Architecture
+
+``` text
+                  User Query
+                      │
+                      ▼
+               Embedding Model
+                      │
+                      ▼
+             Semantic Similarity Search
+                      │
+             ┌────────┴────────┐
+             │                 │
+          Cache Hit        Cache Miss
+             │                 │
+             ▼                 ▼
+      Return Response      Call LLM
+                                │
+                                ▼
+                     Store Prompt–Response Pair
+                                │
+                                ▼
+                     SmartEvict Policy Engine
+                                │
+                                ▼
+                   Select Entry to Evict
+```
+
+------------------------------------------------------------------------
+
+## Key Features
+
+-   Lightweight learned eviction model (\~9.5K parameters)
+-   Cost-aware eviction decisions
+-   Offline training using replayed request traces
+-   Exact LRU fallback for production safety
+-   GPTCache integration
+-   Backend-agnostic wrapper
+-   FAISS or NumPy vector search backend
+-   Fully reproducible benchmarking pipeline
+
+------------------------------------------------------------------------
+
+## Why Not LRU?
+
+Traditional cache eviction policies assume that recently used entries
+are the most valuable to keep. While this works well for conventional
+caches, semantic LLM caches have an additional consideration:
+**regeneration cost**.
+
+  Cached Entry            Regeneration Cost LRU Decision
+  --------------------- ------------------- ----------------
+  FAQ answer                            Low Keep if recent
+  Multi-page analysis                  High Evict if old
+
+Although both entries may be equally old, regenerating the multi-page
+analysis is significantly more expensive. SmartEvict learns to
+prioritize cache entries based on their expected future value rather
+than recency alone.
+
+------------------------------------------------------------------------
+
+## Project Goals
+
+-   Improve regeneration-token savings over classical eviction policies
+-   Maintain production safety through deterministic LRU fallback
+-   Keep inference lightweight enough for CPU-only deployment
+-   Provide a reproducible benchmark for learned semantic cache eviction
+
+------------------------------------------------------------------------
+
+## Workflow
+
+``` text
+Incoming Prompt
+      │
+      ▼
+Generate Embedding
+      │
+      ▼
+Semantic Cache Lookup
+      │
+ ┌────┴─────┐
+ │          │
+Hit        Miss
+ │          │
+ ▼          ▼
+Return     Call LLM
+              │
+              ▼
+      Store Response
+              │
+              ▼
+    SmartEvict decides
+    whether another cache
+    entry should be evicted
+```
+
+------------------------------------------------------------------------
+
 
 Semantic LLM caches (GPTCache, LangChain's cache, Redis semantic caching)
 evict by recency alone: LRU treats a cheap cached FAQ answer and an
