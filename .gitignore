@@ -6,3 +6,5 @@ __pycache__/
 .claude/settings.local.json
 .env
 data/lmsys_trace.json
+faiss.index
+sqlite.db

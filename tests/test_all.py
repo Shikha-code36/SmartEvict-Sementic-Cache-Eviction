@@ -84,6 +84,61 @@ def test_net_save_load_roundtrip():
     print("ok save/load roundtrip")
 
 
+def test_gptcache_adapter():
+    try:
+        import gptcache  # noqa: F401
+    except ImportError:
+        print("skip gptcache adapter: `pip install gptcache` not installed")
+        return
+
+    import shutil
+    import tempfile
+    import time as time_mod
+
+    from gptcache import Cache
+    from gptcache.adapter.api import put, get
+    from gptcache.manager import get_data_manager, CacheBase, VectorBase
+    from gptcache.processor.pre import get_prompt
+    from gptcache.similarity_evaluation.distance import SearchDistanceEvaluation
+
+    from policies.gptcache_adapter import LearnedEviction
+
+    embedder = HashingEmbedder(dim=64)
+
+    def embed_one(text, **_):
+        return embedder.embed([text])[0]
+
+    tmpdir = tempfile.mkdtemp(prefix="gptcache_adapter_test_")
+    cwd = os.getcwd()
+    try:
+        os.chdir(tmpdir)
+        evicted_log = []
+        # no model_path -> must behave exactly like the hard LRU fallback
+        eviction = LearnedEviction(model_path=None, maxsize=5, k_tail=3,
+                                   on_evict=lambda ids: evicted_log.append(ids))
+        dm = get_data_manager(CacheBase("sqlite"), VectorBase("faiss", dimension=64),
+                              eviction_base=eviction, max_size=5)
+        cache = Cache()
+        cache.init(pre_embedding_func=get_prompt, embedding_func=embed_one,
+                  data_manager=dm, similarity_evaluation=SearchDistanceEvaluation())
+
+        for i in range(8):
+            put(f"question number {i}", f"answer {i}", cache_obj=cache)
+            time_mod.sleep(0.001)
+
+        assert eviction.fallbacks == eviction.decisions > 0
+        assert len(eviction._lru_order) == 5
+        hit = get("question number 7", cache_obj=cache)
+        assert hit == "answer 7", hit
+        miss = get("completely unrelated topic zzz", cache_obj=cache)
+        assert miss is None, miss
+        print(f"ok gptcache adapter: {eviction.decisions} decisions, "
+              f"{sum(len(e) for e in evicted_log)} evicted, size={len(eviction._lru_order)}")
+    finally:
+        os.chdir(cwd)
+        shutil.rmtree(tmpdir, ignore_errors=True)
+
+
 if __name__ == "__main__":
     test_embedder_paraphrase_similarity()
     test_simulator_lru_vs_fifo()
@@ -91,4 +146,5 @@ if __name__ == "__main__":
     test_training_reduces_loss()
     test_wrapper_api()
     test_net_save_load_roundtrip()
+    test_gptcache_adapter()
     print("\nall tests passed")

@@ -68,6 +68,43 @@ from features.embeddings import sentence_transformers_embedder
 cache = LearnedSemanticCache(embedding_fn=sentence_transformers_embedder(), ...)
 ```
 
+## Quickstart — use it inside GPTCache
+
+Already using [GPTCache](https://github.com/zilliztech/GPTCache)? You don't
+need to switch caching libraries to try this — GPTCache's own eviction
+backend (`gptcache.manager.eviction.memory_cache.MemoryCacheEviction`) is
+hardcoded to a fixed set of `cachetools` policies (LRU/LFU/FIFO/RR), but
+the interface underneath it is a plain 3-method ABC, and
+`get_data_manager(..., eviction_base=...)` accepts an already-built
+instance of it. `policies/gptcache_adapter.py` implements that interface
+using the same net + hard-fallback logic benchmarked in this repo:
+
+```python
+pip install gptcache
+
+from gptcache import Cache
+from gptcache.manager import get_data_manager, CacheBase, VectorBase
+from policies.gptcache_adapter import LearnedEviction
+
+eviction = LearnedEviction(model_path="results/learned_policy.npz", maxsize=1000)
+data_manager = get_data_manager(CacheBase("sqlite"),
+                                VectorBase("faiss", dimension=384),
+                                eviction_base=eviction, max_size=1000)
+
+cache = Cache()
+cache.init(data_manager=data_manager, ...)  # your usual embedding_func / similarity_evaluation
+```
+
+Caveat: GPTCache's `put`/`get` eviction hooks only pass opaque row ids, not
+the prompt/response text or token counts — this adapter tracks its own
+per-id age/hit-count/idle-time bookkeeping, but has no visibility into
+regeneration cost unless you tell it. Call
+`eviction.note_cost(id, response_tokens)` right after each insert to get
+the full cost-aware behavior benchmarked in [results/RESULTS.md](results/RESULTS.md);
+without it, cost defaults to a flat value and the policy degrades to a
+recency/frequency-only signal (still safe — falls back to plain LRU
+exactly if the model is missing or errors, same as the standalone wrapper).
+
 ## Reproduce the benchmark
 
 ```bash
@@ -157,7 +194,8 @@ data/        synthetic workload generator + LMSYS download script
 simulator/   bounded semantic cache simulator, replay harness
 features/    embeddings (hashing / sentence-transformers) + 6-feature extractor
 model/       NumPy dueling net + offline training pipeline
-policies/    LRU, FIFO, Learned (w/ fallback), Oracle + LearnedSemanticCache wrapper
+policies/    LRU, FIFO, Learned (w/ fallback), Oracle, LearnedSemanticCache
+             wrapper, and the GPTCache EvictionBase adapter
 benchmark/   reproducible comparison script
 tests/       sanity suite (simulator, training, fallback, wrapper, FAISS)
 results/     benchmark output + honest write-up (RESULTS.md)
@@ -177,5 +215,9 @@ results/     benchmark output + honest write-up (RESULTS.md)
   tested across *time-scale* shifts (e.g., traces with very different
   arrival rates); features use log-scaled absolute times, so a per-deployment
   fine-tune (seconds of CPU) is recommended.
-- GPTCache `eviction=` adapter is a stretch goal (Plan §9), not yet built.
+- The GPTCache adapter (`policies/gptcache_adapter.py`) is tested against a
+  real in-process GPTCache `Cache` (sqlite + FAISS), but not against every
+  backend combination GPTCache supports (Redis, Milvus, etc.), and cost
+  weighting there requires the caller to call `note_cost()` explicitly —
+  GPTCache's eviction hooks don't expose response length on their own.
 - Single-threaded wrapper; no persistence of cache contents across restarts.
