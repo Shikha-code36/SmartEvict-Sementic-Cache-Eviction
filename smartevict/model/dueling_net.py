@@ -11,7 +11,7 @@ future value. ~12K params, trains on CPU in seconds.
 Training here is fitted-Q on offline decision points: because an evicted
 entry's episode terminates at the decision, the 1-step target reduces to the
 (discounted) future regeneration cost saved by keeping the entry — computed
-from an infinite-cache "demand" replay (see model/train.py). This is a
+from an infinite-cache "demand" replay (see smartevict/model/train.py). This is a
 deliberate POC simplification of full multi-step Q-learning; stated in the
 README.
 """

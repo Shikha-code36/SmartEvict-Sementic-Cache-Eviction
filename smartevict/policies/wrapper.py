@@ -27,10 +27,8 @@ from __future__ import annotations
 import time
 import numpy as np
 
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from features.extract import entry_features           # noqa: E402
-from model.dueling_net import DuelingEvictionNet      # noqa: E402
+from smartevict.features.extract import entry_features
+from smartevict.model.dueling_net import DuelingEvictionNet
 
 try:
     import faiss

@@ -14,9 +14,7 @@ from __future__ import annotations
 
 import numpy as np
 
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from features.extract import candidates_features  # noqa: E402
+from smartevict.features.extract import candidates_features
 
 
 class BasePolicy:

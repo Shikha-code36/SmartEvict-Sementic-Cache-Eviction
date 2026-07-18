@@ -20,13 +20,11 @@
 from __future__ import annotations
 
 import numpy as np
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from simulator.cache_sim import run_simulation                 # noqa: E402
-from features.extract import candidates_features, N_FEATURES   # noqa: E402
-from policies.eviction import LRUPolicy                        # noqa: E402
-from model.dueling_net import DuelingEvictionNet               # noqa: E402
+from smartevict.simulator.cache_sim import run_simulation
+from smartevict.features.extract import candidates_features, N_FEATURES
+from smartevict.policies.eviction import LRUPolicy
+from smartevict.model.dueling_net import DuelingEvictionNet
 
 
 # ---------------------------------------------------------------------------

@@ -1,17 +1,15 @@
-"""Sanity tests. Run: python tests/test_all.py"""
+"""Sanity tests. Run: python tests/test_all.py (requires `pip install -e .`)"""
 import os
-import sys
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from features.embeddings import HashingEmbedder
-from data.generate_synthetic import generate_workload
-from simulator.cache_sim import run_simulation
-from policies.eviction import LRUPolicy, FIFOPolicy, LearnedPolicy
-from policies.wrapper import LearnedSemanticCache
-from model.dueling_net import DuelingEvictionNet
-from model.train import build_dataset, train_model
+from smartevict.features.embeddings import HashingEmbedder
+from smartevict.data.generate_synthetic import generate_workload
+from smartevict.simulator.cache_sim import run_simulation
+from smartevict.policies.eviction import LRUPolicy, FIFOPolicy, LearnedPolicy
+from smartevict.policies.wrapper import LearnedSemanticCache
+from smartevict.model.dueling_net import DuelingEvictionNet
+from smartevict.model.train import build_dataset, train_model
 
 
 def test_embedder_paraphrase_similarity():
@@ -101,7 +99,7 @@ def test_gptcache_adapter():
     from gptcache.processor.pre import get_prompt
     from gptcache.similarity_evaluation.distance import SearchDistanceEvaluation
 
-    from policies.gptcache_adapter import LearnedEviction
+    from smartevict.policies.gptcache_adapter import LearnedEviction
 
     embedder = HashingEmbedder(dim=64)
 

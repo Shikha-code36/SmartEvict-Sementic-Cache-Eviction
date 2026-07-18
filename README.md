@@ -35,11 +35,22 @@ than LRU with the local `HashingEmbedder`, and **+17.0% ± 1.4%** with real
 clairvoyant oracle ceiling essentially closes. Full tables and all caveats:
 [results/RESULTS.md](results/RESULTS.md).
 
+## Install
+
+```bash
+git clone <this-repo> && cd smartevict-cache-eviction
+pip install -e .              # core package (numpy only)
+pip install -e ".[all]"       # + faiss, LMSYS download, MiniLM, GPTCache adapter
+```
+
+Extras are also installable individually: `.[faiss]`, `.[lmsys]`, `.[minilm]`,
+`.[gptcache]`.
+
 ## Quickstart — use the wrapper
 
 ```python
-from features.embeddings import HashingEmbedder   # or your own embed fn
-from policies.wrapper import LearnedSemanticCache
+from smartevict.features.embeddings import HashingEmbedder   # or your own embed fn
+from smartevict.policies.wrapper import LearnedSemanticCache
 
 cache = LearnedSemanticCache(
     embedding_fn=HashingEmbedder(dim=64).embed,   # list[str] -> normalized np.ndarray
@@ -64,7 +75,7 @@ backend-agnostic by design (Plan §9): it only owns the eviction decision.
 For real semantic quality, swap the embedder:
 
 ```python
-from features.embeddings import sentence_transformers_embedder
+from smartevict.features.embeddings import sentence_transformers_embedder
 cache = LearnedSemanticCache(embedding_fn=sentence_transformers_embedder(), ...)
 ```
 
@@ -76,15 +87,15 @@ backend (`gptcache.manager.eviction.memory_cache.MemoryCacheEviction`) is
 hardcoded to a fixed set of `cachetools` policies (LRU/LFU/FIFO/RR), but
 the interface underneath it is a plain 3-method ABC, and
 `get_data_manager(..., eviction_base=...)` accepts an already-built
-instance of it. `policies/gptcache_adapter.py` implements that interface
-using the same net + hard-fallback logic benchmarked in this repo:
+instance of it. `smartevict/policies/gptcache_adapter.py` implements that
+interface using the same net + hard-fallback logic benchmarked in this repo:
 
 ```python
-pip install gptcache
+pip install -e ".[gptcache]"
 
 from gptcache import Cache
 from gptcache.manager import get_data_manager, CacheBase, VectorBase
-from policies.gptcache_adapter import LearnedEviction
+from smartevict.policies.gptcache_adapter import LearnedEviction
 
 eviction = LearnedEviction(model_path="results/learned_policy.npz", maxsize=1000)
 data_manager = get_data_manager(CacheBase("sqlite"),
@@ -108,18 +119,22 @@ exactly if the model is missing or errors, same as the standalone wrapper).
 ## Reproduce the benchmark
 
 ```bash
-pip install -r requirements.txt
-python tests/test_all.py                       # ~30s sanity suite
-python benchmark/run_benchmark.py              # full 3-regime sweep, ~5 min CPU
-python benchmark/run_benchmark.py --quick      # fast sanity version
+pip install -e ".[all]"
+python tests/test_all.py                                # ~30s sanity suite
+smartevict-benchmark                                     # full 3-regime sweep, ~5 min CPU
+smartevict-benchmark --quick                             # fast sanity version
 ```
+
+(`smartevict-benchmark` is a console script installed by `pip install -e .`;
+equivalently `python -m smartevict.benchmark.run_benchmark`.)
 
 Outputs `results/benchmark.json` + `results/learned_policy.npz`.
 
 ### Run on real data (LMSYS-Chat-1M)
 
-`lmsys/lmsys-chat-1m` is a **gated dataset** — `pip install datasets` alone
-is not enough, you need an approved Hugging Face access request and a token:
+`lmsys/lmsys-chat-1m` is a **gated dataset** — installing the `lmsys` extra
+is not enough on its own, you need an approved Hugging Face access request
+and a token:
 
 1. Create a free account at https://huggingface.co if you don't have one.
 2. Visit https://huggingface.co/datasets/lmsys/lmsys-chat-1m while logged
@@ -135,9 +150,9 @@ is not enough, you need an approved Hugging Face access request and a token:
    ```
 5. Install deps and download:
    ```bash
-   pip install datasets python-dotenv
-   python data/download_lmsys.py --n 50000 --out data/lmsys_trace.json
-   python benchmark/run_benchmark.py --trace data/lmsys_trace.json
+   pip install -e ".[lmsys]"
+   smartevict-download-lmsys --n 50000 --out data/lmsys_trace.json
+   smartevict-benchmark --trace data/lmsys_trace.json
    ```
 
 If step 5 fails with `DatasetNotFoundError: ... is a gated dataset`, the
@@ -145,12 +160,12 @@ token is either missing/invalid or your access request from step 2 hasn't
 been approved yet — it is not a code/setup bug.
 
 To benchmark with real sentence embeddings instead of the local hashing
-proxy, add `pip install sentence-transformers` (first run downloads
+proxy, add `pip install -e ".[minilm]"` (first run downloads
 `all-MiniLM-L6-v2`, ~90MB) and pass `--embedder minilm`:
 
 ```bash
-pip install sentence-transformers
-python benchmark/run_benchmark.py --trace data/lmsys_trace.json --embedder minilm --out results/benchmark_minilm.json
+pip install -e ".[minilm]"
+smartevict-benchmark --trace data/lmsys_trace.json --embedder minilm --out results/benchmark_minilm.json
 ```
 
 This writes to `results/benchmark_minilm.json` and
@@ -162,8 +177,8 @@ are deterministic so they're computed once, and only the learned net is
 retrained per seed, reporting mean ± std vs LRU:
 
 ```bash
-python benchmark/run_benchmark.py --trace data/lmsys_trace.json --seeds 0 1 2 3 4 --out results/benchmark_multiseed_hashing.json
-python benchmark/run_benchmark.py --trace data/lmsys_trace.json --embedder minilm --seeds 0 1 2 3 4 --out results/benchmark_multiseed_minilm.json
+smartevict-benchmark --trace data/lmsys_trace.json --seeds 0 1 2 3 4 --out results/benchmark_multiseed_hashing.json
+smartevict-benchmark --trace data/lmsys_trace.json --embedder minilm --seeds 0 1 2 3 4 --out results/benchmark_multiseed_minilm.json
 ```
 
 ## How it works (Cold-RL → semantic cache mapping)
@@ -190,15 +205,17 @@ for the full algorithm.
 ## Repo layout
 
 ```
-data/        synthetic workload generator + LMSYS download script
-simulator/   bounded semantic cache simulator, replay harness
-features/    embeddings (hashing / sentence-transformers) + 6-feature extractor
-model/       NumPy dueling net + offline training pipeline
-policies/    LRU, FIFO, Learned (w/ fallback), Oracle, LearnedSemanticCache
-             wrapper, and the GPTCache EvictionBase adapter
-benchmark/   reproducible comparison script
-tests/       sanity suite (simulator, training, fallback, wrapper, FAISS)
-results/     benchmark output + honest write-up (RESULTS.md)
+pyproject.toml       package metadata; `pip install -e .` / `.[all]`
+smartevict/
+  data/         synthetic workload generator + LMSYS download script
+  simulator/    bounded semantic cache simulator, replay harness
+  features/     embeddings (hashing / sentence-transformers) + 6-feature extractor
+  model/        NumPy dueling net + offline training pipeline
+  policies/     LRU, FIFO, Learned (w/ fallback), Oracle, LearnedSemanticCache
+                wrapper, and the GPTCache EvictionBase adapter
+  benchmark/    reproducible comparison script
+tests/          sanity suite (simulator, training, fallback, wrapper, FAISS, GPTCache)
+results/        benchmark output + honest write-up (RESULTS.md)
 ```
 
 ## Known limitations
@@ -215,7 +232,7 @@ results/     benchmark output + honest write-up (RESULTS.md)
   tested across *time-scale* shifts (e.g., traces with very different
   arrival rates); features use log-scaled absolute times, so a per-deployment
   fine-tune (seconds of CPU) is recommended.
-- The GPTCache adapter (`policies/gptcache_adapter.py`) is tested against a
+- The GPTCache adapter (`smartevict/policies/gptcache_adapter.py`) is tested against a
   real in-process GPTCache `Cache` (sqlite + FAISS), but not against every
   backend combination GPTCache supports (Redis, Milvus, etc.), and cost
   weighting there requires the caller to call `note_cost()` explicitly —

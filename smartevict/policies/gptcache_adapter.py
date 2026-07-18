@@ -33,17 +33,14 @@ never worse than the hard LRU fallback below).
 """
 from __future__ import annotations
 
-import os
-import sys
 import time
 from typing import Any, Callable, List, Optional
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from model.dueling_net import DuelingEvictionNet  # noqa: E402
+from smartevict.model.dueling_net import DuelingEvictionNet
 
-from gptcache.manager.eviction.base import EvictionBase  # noqa: E402
+from gptcache.manager.eviction.base import EvictionBase
 
 
 class _EntryMeta:

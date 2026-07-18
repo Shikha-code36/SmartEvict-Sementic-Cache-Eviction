@@ -5,8 +5,8 @@
 Setup: 50,000 real conversations from `lmsys/lmsys-chat-1m`, cache size 400,
 similarity threshold 0.8, K-tail = 8, time-ordered 60/40 train/test split
 (30K train / 20K held-out test, no leakage). Reproduce with:
-`python data/download_lmsys.py --n 50000 --out data/lmsys_trace.json`
-then `python benchmark/run_benchmark.py --trace data/lmsys_trace.json [--embedder minilm]`.
+`smartevict-download-lmsys --n 50000 --out data/lmsys_trace.json`
+then `smartevict-benchmark --trace data/lmsys_trace.json [--embedder minilm]`.
 
 | Embedder | FIFO | LRU | Learned (single run) | Learned (5-seed mean ± std) | Oracle (ceiling) |
 |---|---|---|---|---|---|
@@ -16,7 +16,7 @@ then `python benchmark/run_benchmark.py --trace data/lmsys_trace.json [--embedde
 Reproduce the 5-seed run with `--seeds 0 1 2 3 4` (fifo/lru/oracle are
 deterministic — no randomness in their decisions — so they're computed once;
 only the learned net is retrained per seed):
-`python benchmark/run_benchmark.py --trace data/lmsys_trace.json --seeds 0 1 2 3 4 [--embedder minilm]`.
+`smartevict-benchmark --trace data/lmsys_trace.json --seeds 0 1 2 3 4 [--embedder minilm]`.
 
 Hit ratios are much lower than on synthetic data (0.10–0.14 vs. 0.32–0.70) —
 real LMSYS prompts have far less exact/near-duplicate structure than the
@@ -38,7 +38,7 @@ points) is small relative to the ~17-point effect size, for both embedders.
 Setup: 20,000 requests per regime, cache size 400 entries, similarity
 threshold 0.8, K-tail = 8, time-based 60/40 train/test split (model trained
 only on the first 60% of the trace, all numbers below are held-out).
-Reproduce with: `python benchmark/run_benchmark.py --n 20000 --cache-size 400`
+Reproduce with: `smartevict-benchmark --n 20000 --cache-size 400`
 
 Metric of record: **tokens saved** (regeneration-cost proxy), which is what
 the reward optimizes — not raw hit ratio.

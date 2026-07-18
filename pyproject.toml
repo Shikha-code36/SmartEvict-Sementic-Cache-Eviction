@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smartevict"
+version = "0.1.0"
+description = "Learned, cost-aware eviction policy for semantic LLM caches"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+faiss = ["faiss-cpu>=1.8"]
+lmsys = ["datasets>=2.0", "python-dotenv>=1.0"]
+minilm = ["sentence-transformers>=3.0"]
+gptcache = ["gptcache>=0.1.44"]
+all = [
+    "faiss-cpu>=1.8",
+    "datasets>=2.0",
+    "python-dotenv>=1.0",
+    "sentence-transformers>=3.0",
+    "gptcache>=0.1.44",
+]
+
+[project.scripts]
+smartevict-benchmark = "smartevict.benchmark.run_benchmark:main"
+smartevict-download-lmsys = "smartevict.data.download_lmsys:main"
+
+[tool.setuptools.packages.find]
+include = ["smartevict*"]

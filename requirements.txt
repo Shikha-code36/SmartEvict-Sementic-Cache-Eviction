@@ -1,5 +1,9 @@
+# Plain-pip fallback for `pip install -r requirements.txt`. pyproject.toml is
+# the source of truth for packaging (`pip install -e .` / `.[all]`) -- keep
+# these two in sync if you add/change a dependency.
 numpy>=1.24
 faiss-cpu>=1.8  # optional: NumPy fallback store used if absent
-python-dotenv>=1.0  # optional: loads HF_TOKEN from .env for data/download_lmsys.py
+datasets>=2.0  # optional: needed by smartevict/data/download_lmsys.py
+python-dotenv>=1.0  # optional: loads HF_TOKEN from .env for download_lmsys.py
 sentence-transformers>=3.0  # optional: real embeddings for benchmark --embedder minilm
-gptcache>=0.1.44  # optional: only needed for policies/gptcache_adapter.py
+gptcache>=0.1.44  # optional: only needed for smartevict/policies/gptcache_adapter.py

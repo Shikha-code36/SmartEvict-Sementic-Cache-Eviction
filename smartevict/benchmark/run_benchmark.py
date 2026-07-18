@@ -17,17 +17,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
 import time
 
 import numpy as np
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from data.generate_synthetic import generate_workload                    # noqa: E402
-from features.embeddings import HashingEmbedder, sentence_transformers_embedder  # noqa: E402
-from simulator.cache_sim import run_simulation                           # noqa: E402
-from policies.eviction import LRUPolicy, FIFOPolicy, LearnedPolicy, OraclePolicy  # noqa: E402
-from model.train import build_dataset, train_model, compute_future_matches  # noqa: E402
+from smartevict.data.generate_synthetic import generate_workload
+from smartevict.features.embeddings import HashingEmbedder, sentence_transformers_embedder
+from smartevict.simulator.cache_sim import run_simulation
+from smartevict.policies.eviction import LRUPolicy, FIFOPolicy, LearnedPolicy, OraclePolicy
+from smartevict.model.train import build_dataset, train_model, compute_future_matches
 
 
 def evaluate_one(records, emb, max_size, thr, pol, hooks=None):
