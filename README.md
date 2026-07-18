@@ -381,3 +381,53 @@ results/        benchmark output + honest write-up (RESULTS.md)
   weighting there requires the caller to call `note_cost()` explicitly —
   GPTCache's eviction hooks don't expose response length on their own.
 - Single-threaded wrapper; no persistence of cache contents across restarts.
+
+---
+
+## Future Work
+
+The current implementation focuses on demonstrating the effectiveness of a lightweight, learned eviction policy for semantic LLM caches. Future improvements include:
+
+- Support additional semantic cache backends (Redis, Milvus, ChromaDB, Qdrant, etc.)
+- Benchmark on additional real-world conversational and enterprise workloads
+- Evaluate alternative reinforcement learning algorithms (e.g., PPO, SAC, Offline RL variants)
+- Online learning and adaptive fine-tuning from production traffic
+- Multi-threaded and distributed cache wrapper
+- Persistent cache storage and recovery across restarts
+- Additional cost models beyond response-token count (latency, API cost, energy)
+- Integration with production LLM serving frameworks such as vLLM and SGLang
+
+---
+
+## References
+
+This project builds upon ideas and tools from the following works:
+
+- **Cold-RL: Learning-based Cache Eviction for Content Delivery Networks**  
+  https://arxiv.org/abs/2508.12485
+
+- **GPTCache**  
+  https://github.com/zilliztech/GPTCache
+
+- **FAISS (Facebook AI Similarity Search)**  
+  https://github.com/facebookresearch/faiss
+
+- **LMSYS-Chat-1M Dataset**  
+  https://huggingface.co/datasets/lmsys/lmsys-chat-1m
+
+- **Sentence Transformers (MiniLM Embeddings)**  
+  https://www.sbert.net/
+
+---
+
+## Citation
+
+If you use SmartEvict in your research or build upon this project, please consider citing it.
+
+```bibtex
+@software{smartevict2026,
+  title   = {SmartEvict: A Learned Cost-Aware Eviction Policy for Semantic LLM Caches},
+  author  = {Shikha Pandey},
+  year    = {2026},
+  url     = {https://github.com/Shikha-code36/SmartEvict-Sementic-Cache-Eviction}
+}
