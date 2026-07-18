@@ -37,8 +37,17 @@ clairvoyant oracle ceiling essentially closes. Full tables and all caveats:
 
 ## Install
 
+Not published on PyPI (still under active benchmarking/validation) — install
+straight from GitHub or a local clone:
+
 ```bash
-git clone <this-repo> && cd smartevict-cache-eviction
+# directly from GitHub, no clone needed
+pip install "git+https://github.com/Shikha-code36/SmartEvict-Sementic-Cache-Eviction.git"
+pip install "smartevict[all] @ git+https://github.com/Shikha-code36/SmartEvict-Sementic-Cache-Eviction.git"
+
+# or, if you already have a local clone
+git clone https://github.com/Shikha-code36/SmartEvict-Sementic-Cache-Eviction.git
+cd SmartEvict-Sementic-Cache-Eviction
 pip install -e .              # core package (numpy only)
 pip install -e ".[all]"       # + faiss, LMSYS download, MiniLM, GPTCache adapter
 ```
