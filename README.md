@@ -18,8 +18,10 @@ tokens than LRU** depending on duplicate density, capturing ~40–65% of the
 clairvoyant-oracle headroom, with **zero fallbacks fired**.
 
 On a real 50K-request trace from LMSYS-Chat-1M (held-out 20K-request tail):
-the learned policy saves **+18.6% more regeneration tokens than LRU**,
-closing nearly all of the gap to the clairvoyant oracle (+22.4%). Full
+with the local `HashingEmbedder`, the learned policy saves **+18.6% more
+regeneration tokens than LRU** (oracle ceiling +22.4%). Re-run with real
+**MiniLM sentence embeddings** (`--embedder minilm`), the gain is
+**+15.8%** and the gap to the oracle (+15.7%) essentially closes. Full
 tables and all caveats: [results/RESULTS.md](results/RESULTS.md).
 
 ## Quickstart — use the wrapper
@@ -94,6 +96,19 @@ If step 5 fails with `DatasetNotFoundError: ... is a gated dataset`, the
 token is either missing/invalid or your access request from step 2 hasn't
 been approved yet — it is not a code/setup bug.
 
+To benchmark with real sentence embeddings instead of the local hashing
+proxy, add `pip install sentence-transformers` (first run downloads
+`all-MiniLM-L6-v2`, ~90MB) and pass `--embedder minilm`:
+
+```bash
+pip install sentence-transformers
+python benchmark/run_benchmark.py --trace data/lmsys_trace.json --embedder minilm --out results/benchmark_minilm.json
+```
+
+This writes to `results/benchmark_minilm.json` and
+`results/minilm_learned_policy.npz` rather than the default filenames, so it
+won't overwrite the hashing-embedder results/model.
+
 ## How it works (Cold-RL → semantic cache mapping)
 
 | Cold-RL (NGINX) | Here |
@@ -130,13 +145,13 @@ results/     benchmark output + honest write-up (RESULTS.md)
 
 ## Known limitations
 
-- Benchmarked on synthetic data and a real 50K-request LMSYS-Chat-1M trace,
-  both still using the `HashingEmbedder` rather than real sentence
-  embeddings. Rerun with a `sentence_transformers_embedder()` (or similar)
-  before quoting numbers anywhere public — hashing embeddings are a cheap
-  proxy for semantic similarity, not the real thing.
-- LMSYS results are from a single trace/seed/split; re-run across a few
-  seeds before treating +18.6% as a stable effect size.
+- The synthetic-data tables still only use `HashingEmbedder`. The LMSYS
+  real-trace benchmark has now been run with both `HashingEmbedder` and
+  real MiniLM sentence embeddings (`--embedder minilm`) — see
+  [results/RESULTS.md](results/RESULTS.md) for the comparison.
+- LMSYS results (both embedders) are from a single trace/seed/split;
+  re-run across a few seeds before treating +18.6%/+15.8% as a stable
+  effect size.
 - The model generalizes across duplicate-density regimes here, but was not
   tested across *time-scale* shifts (e.g., traces with very different
   arrival rates); features use log-scaled absolute times, so a per-deployment

@@ -24,7 +24,7 @@ import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.generate_synthetic import generate_workload                    # noqa: E402
-from features.embeddings import HashingEmbedder                          # noqa: E402
+from features.embeddings import HashingEmbedder, sentence_transformers_embedder  # noqa: E402
 from simulator.cache_sim import run_simulation                           # noqa: E402
 from policies.eviction import LRUPolicy, FIFOPolicy, LearnedPolicy, OraclePolicy  # noqa: E402
 from model.train import build_dataset, train_model, compute_future_matches  # noqa: E402
@@ -57,10 +57,16 @@ def evaluate(records, emb, max_size, thr, k_tail, net, future_matches):
     return rows
 
 
+def make_embedder(args):
+    if args.embedder == "hashing":
+        return HashingEmbedder(dim=args.dim).embed
+    return sentence_transformers_embedder()
+
+
 def run_regime(tag, records, args, out):
-    embedder = HashingEmbedder(dim=args.dim)
+    embed = make_embedder(args)
     texts = [r["text"] for r in records]
-    emb = embedder.embed(texts)
+    emb = embed(texts)
 
     split = int(len(records) * args.train_frac)
     tr_rec, te_rec = records[:split], records[split:]
@@ -80,7 +86,8 @@ def run_regime(tag, records, args, out):
     rows = evaluate(te_rec, te_emb, args.cache_size, args.threshold,
                     args.k_tail, net, fm_test)
     out[tag] = {"config": {"n_requests": len(records), "cache_size": args.cache_size,
-                           "threshold": args.threshold, "k_tail": args.k_tail},
+                           "threshold": args.threshold, "k_tail": args.k_tail,
+                           "embedder": args.embedder},
                 "train_hist": hist, "results": rows}
     base = rows["lru"]["tokens_saved"]
     for name, r in rows.items():
@@ -104,8 +111,21 @@ def main():
     ap.add_argument("--quick", action="store_true")
     ap.add_argument("--trace", type=str, default=None,
                     help="JSON trace file (e.g. from data/download_lmsys.py)")
+    ap.add_argument("--embedder", choices=["hashing", "minilm"], default="hashing",
+                    help="hashing: local, deterministic, no download. "
+                         "minilm: sentence-transformers/all-MiniLM-L6-v2, real semantic "
+                         "embeddings, requires `pip install sentence-transformers` + "
+                         "one-time model download.")
     ap.add_argument("--out", type=str, default="results/benchmark.json")
+    ap.add_argument("--model-out", type=str, default=None,
+                    help="where to save the trained net (default: derived from --out, "
+                         "e.g. results/benchmark_foo.json -> results/foo_learned_policy.npz)")
     args = ap.parse_args()
+    if args.model_out is None:
+        base = os.path.splitext(os.path.basename(args.out))[0]
+        suffix = base.replace("benchmark", "").strip("_")
+        fname = f"{suffix}_learned_policy.npz" if suffix else "learned_policy.npz"
+        args.model_out = os.path.join(os.path.dirname(args.out) or ".", fname)
     if args.quick:
         args.n, args.epochs = 6000, 4
 
@@ -128,8 +148,8 @@ def main():
     with open(args.out, "w") as f:
         json.dump(out, f, indent=2)
     if net is not None:
-        net.save("results/learned_policy.npz")
-    print(f"\nwrote {args.out} and results/learned_policy.npz")
+        net.save(args.model_out)
+    print(f"\nwrote {args.out} and {args.model_out}")
 
 
 if __name__ == "__main__":
