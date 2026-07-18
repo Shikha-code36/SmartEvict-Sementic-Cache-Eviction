@@ -24,7 +24,8 @@ import numpy as np
 from smartevict.data.generate_synthetic import generate_workload
 from smartevict.features.embeddings import HashingEmbedder, sentence_transformers_embedder
 from smartevict.simulator.cache_sim import run_simulation
-from smartevict.policies.eviction import LRUPolicy, FIFOPolicy, LearnedPolicy, OraclePolicy
+from smartevict.policies.eviction import (LRUPolicy, FIFOPolicy, LearnedPolicy, OraclePolicy,
+                                          GDSFPolicy, CostWeightedRecencyPolicy)
 from smartevict.model.train import build_dataset, train_model, compute_future_matches
 
 
@@ -51,6 +52,8 @@ def evaluate(records, emb, max_size, thr, k_tail, net, future_matches):
     for name, factory in {
         "fifo": lambda: (FIFOPolicy(), None),
         "lru": lambda: (LRUPolicy(), None),
+        "gdsf": lambda: (GDSFPolicy(k_tail=k_tail), None),
+        "cost_weighted_recency": lambda: (CostWeightedRecencyPolicy(k_tail=k_tail), None),
         "learned": lambda: (LearnedPolicy(net, k_tail=k_tail), None),
         "oracle": lambda: (
             (p := OraclePolicy(future_matches, req_times, req_tokens, k_tail=k_tail)), p),
@@ -91,6 +94,8 @@ def run_regime(tag, records, args, out):
         for name, factory in {
             "fifo": lambda: (FIFOPolicy(), None),
             "lru": lambda: (LRUPolicy(), None),
+            "gdsf": lambda: (GDSFPolicy(k_tail=args.k_tail), None),
+            "cost_weighted_recency": lambda: (CostWeightedRecencyPolicy(k_tail=args.k_tail), None),
             "oracle": lambda: ((p := OraclePolicy(
                 fm_test, np.array([r["t"] for r in te_rec]),
                 np.array([r["response_tokens"] for r in te_rec]), k_tail=args.k_tail)), p),
@@ -125,7 +130,7 @@ def run_regime(tag, records, args, out):
                     "results": rows}
         print(f"[{tag}] learned vs LRU across {len(args.seeds)} seeds: "
               f"{learned_agg['vs_lru_pct_mean']:+.2f}% +/- {learned_agg['vs_lru_pct_std']:.2f}%")
-        for name in ("fifo", "lru", "oracle"):
+        for name in ("fifo", "lru", "gdsf", "cost_weighted_recency", "oracle"):
             r = base_rows[name]
             delta = (r["tokens_saved"] / base - 1) * 100 if base else float("nan")
             print(f"  {name:8s} hit={r['hit_ratio']:.4f}  tokens_saved={r['tokens_saved']:>10,}"

@@ -156,18 +156,31 @@ answer is actually valid for a new prompt) — that is a separate problem.
 
 ## Results at a glance
 
+Every cost-aware policy tested — learned or not — beats recency-only
+LRU/FIFO by a wide margin, on both synthetic and real data: the token-cost
+signal is what matters. **A simple non-learned heuristic (GDSF: evict by
+hit-count × cost) matches or beats the learned RL policy in most regimes
+tested**, including on the real trace below; the learned net's edge over
+GDSF only shows up in the synthetic high-duplicate-density regime. See
+[results/RESULTS.md](results/RESULTS.md) for the full breakdown, baselines,
+and a mechanistic explanation (with two follow-up experiments) of *why*
+GDSF wins where it does.
+
 On a 20K-request synthetic conversational workload (held-out split, cache
-size 400): the learned policy saves **+3.6% to +6.5% more regeneration
-tokens than LRU** depending on duplicate density, capturing ~40–65% of the
-clairvoyant-oracle headroom, with **zero fallbacks fired**.
+size 400): the learned policy saves **+3.6% to +6.1% more regeneration
+tokens than LRU** depending on duplicate density (GDSF: +5.4% to +8.0%),
+with **zero fallbacks fired**.
 
 On a real 50K-request trace from LMSYS-Chat-1M (held-out 20K-request tail),
-averaged across 5 training seeds (fifo/lru/oracle are deterministic, so
-only the learned net varies): **+16.7% ± 1.1%** more regeneration tokens
-than LRU with the local `HashingEmbedder`, and **+17.0% ± 1.4%** with real
-**MiniLM sentence embeddings** (`--embedder minilm`) — where the gap to the
-clairvoyant oracle ceiling essentially closes. Full tables and all caveats:
-[results/RESULTS.md](results/RESULTS.md).
+averaged across 5 training seeds (fifo/lru/gdsf/oracle are deterministic,
+so only the learned net varies): learned reaches **+16.7% ± 1.1%** more
+regeneration tokens than LRU with the local `HashingEmbedder` and
+**+17.0% ± 1.4%** with real **MiniLM sentence embeddings**
+(`--embedder minilm`) — but GDSF reaches **+27.7%** and **+19.5%**
+respectively on the same trace. Full tables, baselines, and all caveats:
+[results/RESULTS.md](results/RESULTS.md). For feature/architecture/
+hyperparameter ablations digging into *why*, see
+[results/ABLATIONS.md](results/ABLATIONS.md).
 
 ## Install
 
@@ -353,16 +366,23 @@ smartevict/
   data/         synthetic workload generator + LMSYS download script
   simulator/    bounded semantic cache simulator, replay harness
   features/     embeddings (hashing / sentence-transformers) + 6-feature extractor
-  model/        NumPy dueling net + offline training pipeline
-  policies/     LRU, FIFO, Learned (w/ fallback), Oracle, LearnedSemanticCache
-                wrapper, and the GPTCache EvictionBase adapter
-  benchmark/    reproducible comparison script
+  model/        NumPy dueling net + linear net (architecture ablation) +
+                offline training pipeline
+  policies/     LRU, FIFO, GDSF, Cost-weighted-recency, Learned (w/ fallback),
+                Oracle, LearnedSemanticCache wrapper, GPTCache EvictionBase adapter
+  benchmark/    comparison script + feature/architecture/hparam ablation scripts
 tests/          sanity suite (simulator, training, fallback, wrapper, FAISS, GPTCache)
-results/        benchmark output + honest write-up (RESULTS.md)
+results/        benchmark output + honest write-ups (RESULTS.md, ABLATIONS.md)
 ```
 
 ## Known limitations
 
+- **A simple non-learned heuristic (GDSF) beats the learned policy in most
+  regimes tested**, including the real LMSYS trace — see
+  [results/RESULTS.md](results/RESULTS.md) for the full comparison and a
+  mechanistic explanation. Framing this project as "learning beats
+  heuristics" is not supported by the current evidence; "cost-aware beats
+  recency-only" is.
 - The synthetic-data tables still only use `HashingEmbedder`. The LMSYS
   real-trace benchmark has now been run with both `HashingEmbedder` and
   real MiniLM sentence embeddings (`--embedder minilm`), each averaged

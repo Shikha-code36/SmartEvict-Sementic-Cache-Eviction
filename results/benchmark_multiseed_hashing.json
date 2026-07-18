@@ -20,21 +20,35 @@
         "tokens_saved": 262137,
         "tokens_saved_frac": 0.06818538291964442,
         "evictions": 17612,
-        "wall_s": 2.72
+        "wall_s": 5.32
       },
       "lru": {
         "hit_ratio": 0.1123,
         "tokens_saved": 274067,
         "tokens_saved_frac": 0.07128853744659544,
         "evictions": 17354,
-        "wall_s": 2.74
+        "wall_s": 5.58
+      },
+      "gdsf": {
+        "hit_ratio": 0.1175,
+        "tokens_saved": 349894,
+        "tokens_saved_frac": 0.09101216681081292,
+        "evictions": 17250,
+        "wall_s": 6.91
+      },
+      "cost_weighted_recency": {
+        "hit_ratio": 0.11285,
+        "tokens_saved": 286576,
+        "tokens_saved_frac": 0.0745422977129517,
+        "evictions": 17343,
+        "wall_s": 7.16
       },
       "oracle": {
         "hit_ratio": 0.12155,
         "tokens_saved": 335363,
         "tokens_saved_frac": 0.0872324569674663,
         "evictions": 17169,
-        "wall_s": 3.06
+        "wall_s": 7.31
       },
       "learned_per_seed": [
         {
@@ -43,7 +57,7 @@
           "tokens_saved": 324926,
           "tokens_saved_frac": 0.08451765195507839,
           "evictions": 17172,
-          "wall_s": 4.58,
+          "wall_s": 14.46,
           "fallbacks": 0,
           "decisions": 17172
         },
@@ -53,7 +67,7 @@
           "tokens_saved": 319656,
           "tokens_saved_frac": 0.0831468536015971,
           "evictions": 17177,
-          "wall_s": 4.56,
+          "wall_s": 15.53,
           "fallbacks": 0,
           "decisions": 17177
         },
@@ -63,7 +77,7 @@
           "tokens_saved": 315570,
           "tokens_saved_frac": 0.08208402967895487,
           "evictions": 17206,
-          "wall_s": 4.58,
+          "wall_s": 11.13,
           "fallbacks": 0,
           "decisions": 17206
         },
@@ -73,7 +87,7 @@
           "tokens_saved": 319583,
           "tokens_saved_frac": 0.08312786531320922,
           "evictions": 17185,
-          "wall_s": 4.57,
+          "wall_s": 11.2,
           "fallbacks": 0,
           "decisions": 17185
         },
@@ -83,7 +97,7 @@
           "tokens_saved": 319093,
           "tokens_saved_frac": 0.08300040967882481,
           "evictions": 17170,
-          "wall_s": 4.81,
+          "wall_s": 10.96,
           "fallbacks": 0,
           "decisions": 17170
         }
